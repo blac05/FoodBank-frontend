@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #0a0e1a;
+  font-family: "Inter", sans-serif;
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-panel/60 backdrop-blur-md border border-white/10 rounded-xl2;
+  }
+
+  .glow-btn {
+    @apply bg-rescue text-obsidian font-display font-semibold rounded-xl2 px-6 py-3
+      shadow-glow transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .ghost-btn {
+    @apply glass-panel font-body font-medium px-6 py-3 text-mist hover:border-signal/50 transition-colors;
+  }
+
+  .input-field {
+    @apply w-full bg-obsidian/60 border border-white/10 rounded-xl2 px-4 py-3 text-mist
+      placeholder:text-muted focus:outline-none focus:border-rescue/60 focus:shadow-glow transition-all;
+  }
+
+  .stat-ring-label {
+    @apply font-mono text-xs tracking-wider text-muted uppercase;
+  }
+}
