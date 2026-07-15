@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import TiltCard from "../components/TiltCard";
+import SmartScanPanel from "../components/SmartScanPanel";
 
 const emptyItem = { name: "", quantity: 1, unit: "unit", category: "general" };
 
@@ -31,6 +32,22 @@ export default function DonorDashboard() {
 
   function addItemRow() {
     setItems((prev) => [...prev, { ...emptyItem }]);
+  }
+
+  function handleItemsIdentified(scannedItems) {
+    if (!scannedItems.length) return;
+    // Replace the form if it's still just the untouched blank row; otherwise
+    // append, so scanning a second crate doesn't wipe out manual entries.
+    setItems((prev) => {
+      const isUntouched = prev.length === 1 && !prev[0].name;
+      const normalized = scannedItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        category: item.category,
+      }));
+      return isUntouched ? normalized : [...prev, ...normalized];
+    });
   }
 
   async function handleSubmit(e) {
@@ -65,6 +82,8 @@ export default function DonorDashboard() {
         <TiltCard className="p-6 space-y-4" glow="rescue">
           <form onSubmit={handleSubmit} className="space-y-4">
             <h2 className="font-display text-lg text-mist">New donation</h2>
+
+            <SmartScanPanel onItemsIdentified={handleItemsIdentified} />
 
             <AnimatePresence initial={false}>
               {items.map((item, i) => (

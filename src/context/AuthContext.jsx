@@ -3,6 +3,11 @@ import { api } from "../api/client";
 
 const AuthContext = createContext(null);
 
+function persistSession(data) {
+  localStorage.setItem("foodbank_token", data.accessToken);
+  localStorage.setItem("foodbank_refresh_token", data.refreshToken);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem("foodbank_user");
@@ -21,7 +26,7 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { data } = await api.post("/auth/signup", payload);
-      localStorage.setItem("foodbank_token", data.token);
+      persistSession(data);
       setUser(data.user);
       return data.user;
     } catch (err) {
@@ -37,7 +42,7 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { data } = await api.post("/auth/login", { email, password });
-      localStorage.setItem("foodbank_token", data.token);
+      persistSession(data);
       setUser(data.user);
       return data.user;
     } catch (err) {
@@ -48,9 +53,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function logout() {
-    localStorage.removeItem("foodbank_token");
-    setUser(null);
+  async function logout() {
+    try {
+      // Best-effort: invalidate the refresh token server-side. Don't block
+      // the local logout on this — if it fails, the token still expires
+      // naturally in 30 days, and the client-side session is gone either way.
+      await api.post("/auth/logout");
+    } catch {
+      // ignore — logging out locally still succeeds
+    } finally {
+      localStorage.removeItem("foodbank_token");
+      localStorage.removeItem("foodbank_refresh_token");
+      setUser(null);
+    }
   }
 
   return (

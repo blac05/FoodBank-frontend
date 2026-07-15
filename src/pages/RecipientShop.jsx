@@ -11,6 +11,7 @@ export default function RecipientShop() {
   const [fulfillmentType, setFulfillmentType] = useState("locker");
   const [placing, setPlacing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [checkoutResult, setCheckoutResult] = useState(null);
 
   useEffect(() => {
     api.get("/donations/shop").then(({ data }) => setInventory(data.items));
@@ -48,7 +49,8 @@ export default function RecipientShop() {
         quantity,
         sourceDonation: item.donationId,
       }));
-      await api.post("/orders", { items, fulfillmentType });
+      const { data } = await api.post("/orders", { items, fulfillmentType });
+      setCheckoutResult(data);
       setCart({});
       setConfirmed(true);
     } finally {
@@ -66,12 +68,40 @@ export default function RecipientShop() {
           className="glass-panel p-10 text-center max-w-md"
         >
           <h1 className="font-display text-2xl text-rescue">Order confirmed</h1>
-          <p className="text-muted mt-3">
-            {fulfillmentType === "locker"
-              ? "You'll receive a pickup code by text once your locker is ready."
-              : "Your delivery will arrive in unmarked packaging within your selected window."}
-          </p>
-          <button onClick={() => setConfirmed(false)} className="glow-btn mt-6">
+
+          {fulfillmentType === "locker" && checkoutResult?.locker && (
+            <div className="mt-5 glass-panel p-5 text-left">
+              <p className="stat-ring-label">Pickup hub</p>
+              <p className="text-mist font-display mt-1">{checkoutResult.locker.hubAddress}</p>
+              <p className="stat-ring-label mt-4">Your access code</p>
+              <p className="font-mono text-3xl tracking-widest text-rescue mt-1">
+                {checkoutResult.locker.accessCode}
+              </p>
+              <p className="text-xs text-muted mt-2">
+                Valid until{" "}
+                {new Date(checkoutResult.locker.accessCodeExpiresAt).toLocaleString(undefined, {
+                  weekday: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+                . Enter it at the locker keypad — no app required.
+              </p>
+            </div>
+          )}
+
+          {fulfillmentType === "locker" && checkoutResult?.lockerPending && (
+            <p className="text-muted mt-3">
+              Every locker is in use right now — you'll get a text with your access code the moment one frees up.
+            </p>
+          )}
+
+          {fulfillmentType === "delivery" && (
+            <p className="text-muted mt-3">
+              Your delivery will arrive in unmarked packaging within your selected window.
+            </p>
+          )}
+
+          <button onClick={() => { setConfirmed(false); setCheckoutResult(null); }} className="glow-btn mt-6">
             Back to shop
           </button>
         </motion.div>
